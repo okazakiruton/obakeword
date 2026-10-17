@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>おばけワード</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+:root{--bg:#FFFBEA;--fg:#4a5a47;--cell:#CDEFD6;--open:#fff;--bd:#8fbf9f;--ok:#7bc47f;--bad:#f07d6e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#26302a;--fg:#f3efe0;--cell:#4b6b56;--open:#33423a;--bd:#6f9a7e}}
+:root[data-theme="dark"]{--bg:#26302a;--fg:#f3efe0;--cell:#4b6b56;--open:#33423a;--bd:#6f9a7e}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:12px}
+h1{font-size:22px;margin:4px 0;letter-spacing:2px}
+.info{font-size:14px;margin:4px 0;text-align:center}
+#grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(88vw,340px);margin:10px 0}
+#grid button{aspect-ratio:1;border:2px dashed var(--bd);background:var(--cell);color:var(--fg);font-size:26px;font-weight:800;padding:0;border-radius:18px;position:relative;box-shadow:0 4px 0 var(--bd);transition:transform .12s;font-family:inherit}
+#grid button:active{transform:translateY(3px) scale(.96);box-shadow:0 1px 0 var(--bd)}
+@keyframes pur{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+#grid button:nth-child(26){grid-column:3}
+#grid button.o{background:var(--open);border-style:solid;box-shadow:none}
+#grid button.x{background:var(--bad);color:#fff;border-color:var(--bad);border-style:solid;animation:pur .4s}
+#grid button i{position:absolute;right:5px;bottom:2px;font-size:14px;font-style:normal;color:#e0842c}
+#grid button em{position:absolute;left:3px;top:0;font-size:12px;font-style:normal}
+.ctl{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center}
+input{font-size:18px;width:120px;text-transform:uppercase;padding:6px 12px;letter-spacing:3px;text-align:center;border:2px dashed var(--bd);background:var(--open);color:var(--fg);border-radius:999px;font-family:inherit}
+.b{font-size:14px;padding:8px 14px;border-radius:999px;border:2px solid var(--bd);background:var(--open);color:var(--fg);box-shadow:0 3px 0 var(--bd);font-family:inherit}
+.b.on{background:#f29a3a;color:#fff;border-color:#f29a3a}
+.seg .b.on{background:#f29a3a;color:#fff;border-color:#f29a3a;font-weight:700}
+#msg{min-height:22px;font-weight:700;text-align:center}
+#st{font-weight:700}
+#wr{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:340px;margin-bottom:12px}
+#wr span{font-size:14px;letter-spacing:2px;padding:2px 8px;border:1px solid var(--bd);border-radius:6px;text-decoration:line-through;opacity:.75}
+</style></head><body>
+<h1>👻 おばけワード</h1>
+<div class="info">A〜Zの26マス。<b>答えの5文字のマスにおばけがいる</b>！<br>安全なマスを開くと、隣（斜め含む）のおばけの数が見える。<br>おばけのいる文字を推理して、5文字の単語を当てよう。<br>「重複あり」では同じ文字のマスにおばけが2匹（数字も2と数える）。</div>
+<div class="ctl seg" id="gms"><button class="b on" data-g="0">ふつう</button><button class="b" data-g="1">⏱ タイムアタック</button><button class="b" data-g="2">🔥 連続正解</button></div>
+<div class="ctl seg" id="mds"><button class="b on" data-m="0">通常の単語</button><button class="b" data-m="1">重複あり</button></div>
+<div class="ctl seg" id="lvs"><button class="b" data-l="0">かんたん</button><button class="b on" data-l="1">ふつう</button><button class="b" data-l="2">むずかしい</button></div>
+<div class="info" id="lvi"></div>
+<div class="info" id="gi"></div>
+<div class="info" id="st"></div>
+<div id="grid"></div>
+<div class="ctl"><button class="b" id="fl">🚩 旗モード</button><button class="b" id="nw">新ゲーム</button></div>
+<div id="msg"></div>
+<a id="xs" class="b" target="_blank" rel="noopener" style="display:none;text-decoration:none;margin-bottom:8px">𝕏 で結果をシェア</a>
+<div class="ctl"><input id="in" maxlength="5" placeholder="ANSWER" autocomplete="off"><button class="b" id="go">回答</button></div>
+<div id="wr"></div>
+<script>
+const L=[{d:"HOUSE WATER MUSIC SMILE TABLE PIANO MONEY LUNCH DANCE TRAIN SPORT NIGHT WORLD FRUIT PLANE BEACH CANDY TIGER ZEBRA LEMON MOUSE SUGAR DREAM WHITE BLACK BROWN STUDY PARTY".split(" "),r:"APPLE HAPPY GREEN SHEEP SMALL SLEEP CLOCK SWEET".split(" ")},
+{d:"GHOST FLAME KNIFE MAGIC OCEAN UNCLE VOICE CLOUD STORM PLANT CHAIR EARTH JUICE GLOBE CLIMB PRIDE PAINT YOUTH QUIET MAJOR SOLVE ANGRY CHIEF DEPTH BRUSH BRAVE".split(" "),r:"QUEEN RIVER BERRY SPEED GRASS ROBOT TRUST ERROR BLOOM".split(" ")},
+{d:"VIGOR FRAUD BLUNT VAULT SCORN WRATH EPOCH AUDIT BRINK MIRTH QUOTA ENVOY GRIEF FORUM ULCER DRAFT NOBLE".split(" "),r:"ALLOY ANNEX ISSUE EERIE OFFER EXCEL SAVVY".split(" ")}];
+const LVN=["かんたん","ふつう","むずかしい"],LVI=["英検5〜4級（中学の基本）くらいの単語","英検3〜準2級（中学〜高校基礎）くらいの単語","英検2〜準1級（高校上級〜入試）くらいの単語"];
+const GM=["ふつう","⏱ タイムアタック","🔥 連続正解"];
+const GI=["おばけに会ったらおしまい。回答ミスは3回まで。","おばけに会うと +30秒、回答ミス +10秒。最初のクリックから計測、速く当てよう！","正解すると次の問題へ。ライフ3つは、おばけに会うことと回答ミスで減る。何問続くかな？"];
+let mode=0,gm=0,lv=1,streak=0,tid=0,g;
+const $=id=>document.getElementById(id);
+const sv=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+const sh=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const pos=i=>i<25?[i/5|0,i%5]:[5,2];
+const nb=i=>{const[a,b]=pos(i);return[...Array(26).keys()].filter(j=>{if(j===i)return 0;const[c,d]=pos(j);return Math.abs(a-c)<=1&&Math.abs(b-d)<=1})};
+const cnt=(w,ch)=>w.split(ch).length-1;
+function recount(){g.c.forEach((x,i)=>x.n=nb(i).reduce((s,j)=>s+g.c[j].m,0))}
+function init(cont){clearInterval(tid);const P=mode?L[lv].d.concat(L[lv].r):L[lv].d;const w=P[Math.random()*P.length|0];
+const ls=sh("ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""));const keep=cont&&gm==2&&g;
+g={w,c:ls.map(ch=>({ch,m:cnt(w,ch),r:0,f:0,n:0})),over:0,fm:0,lives:keep?g.lives:3,first:1,pen:0,t0:0,wr:[]};
+if(!keep)streak=0;recount();
+$("msg").textContent="";$("in").value="";$("xs").style.display="none";$("fl").classList.remove("on");$("gi").textContent=GI[gm];$("lvi").textContent="【"+LVN[lv]+"】"+LVI[lv];draw()}
+const el=()=>(g.t0?(Date.now()-g.t0)/1000:0)+g.pen;
+function startT(){if(gm==1&&!g.t0){g.t0=Date.now();tid=setInterval(upd,100)}}
+function upd(){const h="❤️".repeat(g.lives)+"🖤".repeat(3-g.lives);
+if(gm==1){const b=sv("mw-t"+mode+"-"+lv);$("st").textContent=`⏱ ${el().toFixed(1)}秒（ペナルティ+${g.pen}）　ベスト ${b?b+"秒":"-"}`}
+else if(gm==2){$("st").textContent=`🔥 連続 ${streak}　ベスト ${sv("mw-s"+mode+"-"+lv)||0}　${h}`}
+else $("st").textContent=`${h}　開けたマス ${g.c.filter(x=>x.r&&!x.m).length}/${g.c.filter(x=>!x.m).length}`}
+function share(t){const a=$("xs");a.href="https://twitter.com/intent/tweet?text="+encodeURIComponent(t+"\n#おばけワード");a.style.display="inline-block"}
+function lose(m){g.over=1;clearInterval(tid);g.c.forEach(y=>{if(y.m)y.x=1});$("msg").textContent=m+" 答えは "+g.w+(gm==2?`（連続${streak}問）`:"");const d=(mode?"（重複あり）":"")+`【${LVN[lv]}】`;share(gm==2?`🔥 おばけワード 連続正解${d}\n${streak}問連続正解！`:`👻 おばけワード${gm==1?" タイムアタック":""}${d}に挑戦！`);draw()}
+function boom(x){x.r=1;x.x=1;
+if(gm==1){g.pen+=30;$("msg").textContent="👻 おばけが出た！ +30秒"}
+else if(gm==2){g.lives--;if(g.lives<=0)return lose("👻 ライフ0！");$("msg").textContent="👻 おばけが出た！ ライフ-1"}
+else return lose("👻 おばけが出た！");
+draw()}
+function click(i){if(g.over)return;const x=g.c[i];
+if(g.fm){if(!x.r){x.f^=1;draw()}return}
+if(x.r||x.f)return;startT();
+if(g.first){g.first=0;if(x.m){const k=g.c.findIndex(y=>!y.m&&!y.r);const t=x.ch;x.ch=g.c[k].ch;g.c[k].ch=t;x.m=cnt(g.w,x.ch);g.c[k].m=cnt(g.w,g.c[k].ch);recount()}}
+if(x.m){boom(x);return}
+x.r=1;draw()}
+function win(){g.over=1;clearInterval(tid);g.c.forEach(y=>{if(y.m)y.x=2});let m="🎉 正解！"+g.w;
+if(gm==1){const t=el(),k="mw-t"+mode+"-"+lv,b=+sv(k)||1e9;if(t<b){sv(k,t.toFixed(1));m+=" 🏆新記録！"}m+=` タイム ${t.toFixed(1)}秒`}
+if(gm==2){streak++;const k="mw-s"+mode+"-"+lv;if(streak>(+sv(k)||0))sv(k,streak);m+=` 連続${streak}！次の問題へ…`;const gg=g;setTimeout(()=>{if(g===gg&&gm==2)init(1)},1600)}
+$("msg").textContent=m;$("in").value="";const d=(mode?"（重複あり）":"")+`【${LVN[lv]}】`;if(gm==0)share(`🎉 おばけワード${d}で正解！`);if(gm==1)share(`⏱ おばけワード タイムアタック${d}\n${el().toFixed(1)}秒でクリア！`);draw()}
+function guess(){if(g.over)return;const v=$("in").value.toUpperCase();
+if(!/^[A-Z]{5}$/.test(v)){$("msg").textContent="英字5文字で入力してね";return}
+if(g.wr.includes(v)){$("msg").textContent="それはもう外れた言葉だよ（ペナルティなし）";return}
+startT();if(v===g.w)return win();
+g.wr.push(v);if(gm==1){g.pen+=10;$("msg").textContent="ハズレ！+10秒"}
+else{g.lives--;if(g.lives<=0)return lose("残念…");$("msg").textContent="ハズレ！あと"+g.lives+"回"}
+$("in").value="";draw()}
+function draw(){upd();$("wr").innerHTML=(g.wr.length?'<b style="width:100%;text-align:center;font-size:13px">外れた言葉</b>':"")+g.wr.map(w=>`<span>${w}</span>`).join("");
+$("grid").innerHTML="";g.c.forEach((x,i)=>{const b=document.createElement("button");
+b.textContent=x.ch;
+if(x.r){b.className="o";b.innerHTML=`${x.ch}<i>${x.n}</i>`}
+if(x.x){b.innerHTML=x.ch+(x.m>1?`<i>×${x.m}</i>`:"")+`<em>👻</em>`;b.className=x.x==2?"o":"x";if(x.x==2)b.style.background="var(--ok)",b.style.color="#fff"}
+if(x.f&&!x.r&&!x.x)b.innerHTML=`${x.ch}<em>🚩</em>`;
+b.onclick=()=>click(i);b.oncontextmenu=e=>{e.preventDefault();if(!x.r&&!g.over){x.f^=1;draw()}};$("grid").appendChild(b)})}
+$("fl").onclick=()=>{g.fm^=1;$("fl").classList.toggle("on",!!g.fm)};
+document.querySelectorAll("#gms .b").forEach(b=>b.onclick=()=>{gm=+b.dataset.g;document.querySelectorAll("#gms .b").forEach(x=>x.classList.toggle("on",x===b));init()});
+document.querySelectorAll("#mds .b").forEach(b=>b.onclick=()=>{mode=+b.dataset.m;document.querySelectorAll("#mds .b").forEach(x=>x.classList.toggle("on",x===b));init()});
+document.querySelectorAll("#lvs .b").forEach(b=>b.onclick=()=>{lv=+b.dataset.l;document.querySelectorAll("#lvs .b").forEach(x=>x.classList.toggle("on",x===b));init()});
+$("nw").onclick=()=>init();$("go").onclick=guess;$("in").onkeydown=e=>{if(e.key==="Enter")guess()};
+init();
+</script></body></html>
