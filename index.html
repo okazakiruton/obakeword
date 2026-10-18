@@ -2,10 +2,10 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>おばけワード</title>
-<meta name="description" content="答えの5文字にひそむおばけを探して、英単語を当てるマインスイーパー×ワードルのブラウザゲーム。">
+<meta name="description" content="答えの5文字にひそむおばけを探して、英単語を当てよう！ブラウザで遊べる推理パズルゲーム。">
 <meta property="og:type" content="website">
 <meta property="og:title" content="おばけワード">
-<meta property="og:description" content="答えの5文字にひそむおばけを探して、英単語を当てよう！マインスイーパー×ワードル">
+<meta property="og:description" content="答えの5文字にひそむおばけを探して、英単語を当てよう！ブラウザで遊べる推理パズル">
 <meta property="og:url" content="https://okazakiruton.github.io/obakeword/">
 <meta property="og:image" content="https://okazakiruton.github.io/obakeword/ogp.png">
 <meta property="og:image:width" content="1200">
@@ -41,16 +41,28 @@ input{font-size:18px;width:120px;text-transform:uppercase;padding:6px 12px;lette
 .seg .b.on{background:#f29a3a;color:#fff;border-color:#f29a3a;font-weight:700}
 #msg{min-height:22px;font-weight:700;text-align:center}
 #st{font-weight:700}
+.lab{font-size:13px;font-weight:800;opacity:.75;width:min(92vw,340px);margin-top:8px}
+.seg{flex-wrap:nowrap;width:min(92vw,340px);margin:4px 0}
+.seg .b{flex:1 1 auto;padding:8px 6px;font-size:13px;white-space:nowrap}
+.tg{display:flex;align-items:center;justify-content:space-between;gap:10px;width:min(92vw,340px);font-size:14px;cursor:pointer;margin:4px 0}
+.tg input{display:none}
+.sl{width:52px;height:30px;border-radius:999px;background:var(--cell);border:2px solid var(--bd);position:relative;flex:none;transition:background .2s}
+.sl:after{content:"";position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 2px 0 var(--bd);transition:left .2s}
+.tg input:checked+.sl{background:#f29a3a;border-color:#f29a3a}
+.tg input:checked+.sl:after{left:24px}
 #wr{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:340px;margin-bottom:12px}
 #wr span{font-size:14px;letter-spacing:2px;padding:2px 8px;border:1px solid var(--bd);border-radius:6px;text-decoration:line-through;opacity:.75}
 </style></head><body>
 <h1>👻 おばけワード</h1>
 <div class="info">A〜Zの26マス。<b>答えの5文字のマスにおばけがいる</b>！<br>安全なマスを開くと、隣（斜め含む）のおばけの数が見える。<br>おばけのいる文字を推理して、5文字の単語を当てよう。<br>「重複あり」では同じ文字のマスにおばけが2匹（数字も2と数える）。</div>
+<div class="lab">モード</div>
 <div class="ctl seg" id="gms"><button class="b on" data-g="0">ふつう</button><button class="b" data-g="1">⏱ タイムアタック</button><button class="b" data-g="2">🔥 連続正解</button></div>
-<div class="ctl seg" id="mds"><button class="b on" data-m="0">通常の単語</button><button class="b" data-m="1">重複あり</button></div>
+<div class="info" id="gi"></div>
+<div class="lab">むずかしさ</div>
 <div class="ctl seg" id="lvs"><button class="b" data-l="0">かんたん</button><button class="b on" data-l="1">ふつう</button><button class="b" data-l="2">むずかしい</button></div>
 <div class="info" id="lvi"></div>
-<div class="info" id="gi"></div>
+<div class="lab">単語</div>
+<label class="tg"><span>同じ文字が重なる単語も出す（重複あり）</span><input type="checkbox" id="dup"><i class="sl"></i></label>
 <div class="info" id="st"></div>
 <div id="grid"></div>
 <div class="ctl"><button class="b" id="fl">🚩 旗モード</button><button class="b" id="nw">新ゲーム</button></div>
@@ -62,7 +74,7 @@ input{font-size:18px;width:120px;text-transform:uppercase;padding:6px 12px;lette
 const L=[{d:"HOUSE WATER MUSIC SMILE TABLE PIANO MONEY LUNCH DANCE TRAIN SPORT NIGHT WORLD FRUIT PLANE BEACH CANDY TIGER ZEBRA LEMON MOUSE SUGAR DREAM WHITE BLACK BROWN STUDY PARTY".split(" "),r:"APPLE HAPPY GREEN SHEEP SMALL SLEEP CLOCK SWEET".split(" ")},
 {d:"GHOST FLAME KNIFE MAGIC OCEAN UNCLE VOICE CLOUD STORM PLANT CHAIR EARTH JUICE GLOBE CLIMB PRIDE PAINT YOUTH QUIET MAJOR SOLVE ANGRY CHIEF DEPTH BRUSH BRAVE".split(" "),r:"QUEEN RIVER BERRY SPEED GRASS ROBOT TRUST ERROR BLOOM".split(" ")},
 {d:"VIGOR FRAUD BLUNT VAULT SCORN WRATH EPOCH AUDIT BRINK MIRTH QUOTA ENVOY GRIEF FORUM ULCER DRAFT NOBLE".split(" "),r:"ALLOY ANNEX ISSUE EERIE OFFER EXCEL SAVVY".split(" ")}];
-const LVN=["かんたん","ふつう","むずかしい"],LVI=["英検5〜4級（中学の基本）くらいの単語","英検3〜準2級（中学〜高校基礎）くらいの単語","英検2〜準1級（高校上級〜入試）くらいの単語"];
+const LVN=["かんたん","ふつう","むずかしい"],LVI=["中学の基本くらいの単語","中学〜高校基礎くらいの単語","高校上級〜入試くらいの単語"];
 const GM=["ふつう","⏱ タイムアタック","🔥 連続正解"];
 const GI=["おばけに会ったらおしまい。回答ミスは3回まで。","おばけに会うと +30秒、回答ミス +10秒。最初のクリックから計測、速く当てよう！","正解すると次の問題へ。ライフ3つは、おばけに会うことと回答ミスで減る。何問続くかな？"];
 let mode=0,gm=0,lv=1,streak=0,tid=0,g;
@@ -118,7 +130,7 @@ if(x.f&&!x.r&&!x.x)b.innerHTML=`${x.ch}<em>🚩</em>`;
 b.onclick=()=>click(i);b.oncontextmenu=e=>{e.preventDefault();if(!x.r&&!g.over){x.f^=1;draw()}};$("grid").appendChild(b)})}
 $("fl").onclick=()=>{g.fm^=1;$("fl").classList.toggle("on",!!g.fm)};
 document.querySelectorAll("#gms .b").forEach(b=>b.onclick=()=>{gm=+b.dataset.g;document.querySelectorAll("#gms .b").forEach(x=>x.classList.toggle("on",x===b));init()});
-document.querySelectorAll("#mds .b").forEach(b=>b.onclick=()=>{mode=+b.dataset.m;document.querySelectorAll("#mds .b").forEach(x=>x.classList.toggle("on",x===b));init()});
+$("dup").onchange=e=>{mode=e.target.checked?1:0;init()};
 document.querySelectorAll("#lvs .b").forEach(b=>b.onclick=()=>{lv=+b.dataset.l;document.querySelectorAll("#lvs .b").forEach(x=>x.classList.toggle("on",x===b));init()});
 $("nw").onclick=()=>init();$("go").onclick=guess;$("in").onkeydown=e=>{if(e.key==="Enter")guess()};
 init();
